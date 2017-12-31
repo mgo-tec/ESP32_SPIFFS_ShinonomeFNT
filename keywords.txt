@@ -7,10 +7,14 @@ StrDirect_ShinoFNT_readALL	KEYWORD2
 StrDirect_ShinoFNT_readALL2F	KEYWORD2
 SjisShinonomeFNTread_ALL	KEYWORD2
 SjisToShinonome16FontRead	KEYWORD2
-SjisToShinonome16FontRead2	KEYWORD2
 SjisToShinonome16FontRead_ALL	KEYWORD2
 Scroller_RtoL	KEYWORD2
 SjisToShinonomeFNTadrs	KEYWORD2
 SPIFFS_Flash_ShinonomeFNTread_FHN	KEYWORD2
 SPIFFS_Flash_ShinonomeFNTread_Harf_FHN	KEYWORD2
+UTF8toSJIS_convert	KEYWORD2
+Scroll_Sjis_1_line	KEYWORD2
 Sjis_inc_FntRead	KEYWORD2
+Sjis_inc_FntRead_Rot	KEYWORD2
+Fnt16x16_Rotation	KEYWORD2
+Scroller_Font8x16_DotReplace	KEYWORD2

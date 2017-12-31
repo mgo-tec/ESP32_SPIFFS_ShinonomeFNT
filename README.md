@@ -1,7 +1,7 @@
 # ESP32_SPIFFS_ShinonomeFNT
 This is the Arduino core for the ESP32 library for reading Shinonome 16x16 Japanese font.  
   
-Beta ver1.0  
+Beta ver1.1  
   
 これはShift_JISコードからフリーの東雲フォント(16x16)を ESP-WROOM-32( ESP32 )で読み込むためのライブラリです。  
 SPIFFS File System からの読み込み専用です。  
@@ -14,9 +14,16 @@ Utf8Sjis.tbl (UTF-8 Shift_JIS変換テーブル)
 shnmk16.bdf (全角東雲フォント)  
 shnm8x16.bdf (半角東雲フォント, ファイル名の'r'をカットしたもの)  
   
-【更新履歴】  
+【Change log】  
+(1.1)  
+Scroll through the Shinonome font and autoincrement the loading.  
 (1.0)  
 New released  
+  
+  
+【日本語更新履歴】    
+(1.1)  
+東雲フォントをスクロールさせ、読み込みを自動インクリメントするようにしました。  
   
 (1.0)  
 ESP32 SPIFFS用リリース  

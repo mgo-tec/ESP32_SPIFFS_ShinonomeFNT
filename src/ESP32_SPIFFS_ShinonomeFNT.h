@@ -1,6 +1,6 @@
 /*
   ESP32_SPIFFS_ShinonomeFNT.h - Arduino core for the ESP32 Library.
-  Beta version 1.0
+  Beta version 1.1
   This is micro SPIFFS card library for reading Shinonome font.  
   
 The MIT License (MIT)
@@ -39,6 +39,20 @@ Maintenance development of Font is /efont/.
 
 class ESP32_SPIFFS_ShinonomeFNT
 {
+private:
+  uint32_t _SPIFFS_freq;
+  File _SinoZ;
+  File _SinoH;
+  File _UtoS;
+  ESP32_SPIFFS_UTF8toSJIS _u8ts;
+
+  uint8_t _Zen_or_Han_cnt[4] = {};
+  uint8_t _Zen_or_Han[4] = {};
+  uint8_t _scl_cnt1[4] = {};
+  uint16_t _sj_cnt1[4] = {};
+  boolean _fnt_read_ok[4] = {true, true, true, true};
+  uint8_t _dummy_buf[4][2][16] = {};
+
 public:
   ESP32_SPIFFS_ShinonomeFNT();
 
@@ -47,34 +61,25 @@ public:
   void SPIFFS_Shinonome_Close3F();
   void SPIFFS_Shinonome_Close2F();
   uint16_t StrDirect_ShinoFNT_readALL(String str, uint8_t font_buf[][16]);
+  uint16_t StrDirect_ShinoFNT_readALL(int16_t Rotation, String str, uint8_t font_buf[][16]);
   uint16_t StrDirect_ShinoFNT_readALL2F(File UtoS, String str, uint8_t font_buf[][16]);
+  uint16_t UTF8toSJIS_convert(String str, uint8_t* sj_code);
   uint16_t SjisShinonomeFNTread_ALL(String str, uint8_t* sj_code, uint8_t font_buf[][16]);
-  uint8_t SjisToShinonome16FontRead(File f1, File f2, uint8_t Direction, int16_t Angle, uint8_t jisH, uint8_t jisL, uint8_t buf1[16], uint8_t buf2[16]);
-  uint8_t SjisToShinonome16FontRead2(uint8_t jisH, uint8_t jisL, uint8_t buf1[16], uint8_t buf2[16]);
-  void SjisToShinonome16FontRead_ALL(File f1, File f2, uint8_t Direction, int16_t Angle, uint8_t* Sjis, uint16_t sj_length, uint8_t font_buf[][16]);
-  void Scroller_RtoL(uint8_t disp_char_max, uint8_t scl_buff[][16], uint8_t *sjis_txt, uint16_t Length, uint8_t* scl_cnt1, uint16_t* sj_cnt1);
+  uint8_t SjisToShinonome16FontRead(File f1, File f2, uint8_t jisH, uint8_t jisL, uint8_t buf1[16], uint8_t buf2[16]);
+  void SjisToShinonome16FontRead_ALL(File f1, File f2, uint8_t Direction, int16_t Rotation, uint8_t* Sjis, uint16_t sj_length, uint8_t font_buf[][16]);
   void SjisToShinonomeFNTadrs(uint8_t jisH, uint8_t jisL, uint32_t* fnt_adrs);
   void SPIFFS_Flash_ShinonomeFNTread_FHN(File ff, uint32_t addrs, uint8_t buf1[16], uint8_t buf2[16]);
   void SPIFFS_Flash_ShinonomeFNTread_Harf_FHN(File ff, uint32_t addrs, uint8_t buf[16]);
-  uint8_t Sjis_inc_FntRead(uint8_t *sj, uint16_t length, uint16_t *sj_cnt, uint8_t buf[2][16]);
-  uint8_t Sjis_inc_FntRead2(uint8_t *sj, uint16_t length, uint16_t *sj_cnt, uint8_t buf[2][16]);
-  
-private:
-  uint32_t _SPIFFS_freq;
-  File _SinoZ;
-  File _SinoH;
-  File _UtoS;
-  ESP32_SPIFFS_UTF8toSJIS _u8ts;
-  
-  const char *_gF1;
-  const char *_gF2;
+  void Scroll_Sjis_1_line(uint8_t disp_char, uint8_t num, uint8_t sj_txt[], uint16_t sj_length, uint8_t disp_buf[][16]);
+  uint8_t Sjis_inc_FntRead(uint16_t *sjcnt, uint8_t num, uint8_t sj[], uint16_t length, uint8_t buf[2][16]);
+  uint8_t Sjis_inc_FntRead(uint8_t num, uint8_t sj[], uint16_t length, uint8_t buf[2][16]);
+  uint8_t Sjis_inc_FntRead(uint8_t sj[], uint16_t length, uint16_t *sj_cnt, uint8_t buf[2][16]);
+  uint8_t Sjis_inc_FntRead_Rot(uint16_t *sjcnt, int16_t Rotation, uint8_t Direction, uint8_t num, uint8_t sj[], uint16_t length, uint8_t bufff[2][16]);
+  uint8_t Sjis_inc_FntRead_Rot(int16_t Rotation, uint8_t Direction, uint8_t num, uint8_t sj[], uint16_t length, uint8_t buf[2][16]);
+  void Fnt16x16_Rotation(int16_t Rotation, uint8_t fnt_buf[2][16], uint8_t bufff[2][16]);
 
-  uint8_t _Sino_font_buf[16][16]; //東雲（しののめ）フォントバッファ
-  uint8_t _SnnmDotOut[16][16];
-  uint8_t _Next_buf[16][16];
-  uint8_t _font_buf[2][16];
-  uint8_t _Orign_buf[16];
-  uint8_t _ZENorHalf = 0;
+  boolean Scroller_Font8x16_DotReplace(uint8_t disp_char, uint8_t num, uint8_t Zen_or_Han, uint8_t font_buf1[][16], uint8_t scl_buff1[][16]);
+
 };
 
 #endif

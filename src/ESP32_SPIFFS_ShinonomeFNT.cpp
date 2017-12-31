@@ -1,6 +1,6 @@
 /*
   ESP32_SPIFFS_ShinonomeFNT.cpp - Arduino core for the ESP32 Library.
-  Beta version 1.0
+  Beta version 1.1
   This is micro SPIFFS card library for reading Shinonome font.  
   
 The MIT License (MIT)
@@ -30,23 +30,15 @@ Licence of Shinonome Font is Public Domain.
 Maintenance development of Font is /efont/.
 */
 
-#include "Arduino.h"
 #include "ESP32_SPIFFS_ShinonomeFNT.h"
-#include "SPIFFS.h"
 
 ESP32_SPIFFS_ShinonomeFNT::ESP32_SPIFFS_ShinonomeFNT(){}
 
-File _UtoS;
-
 //*********東雲フォントライブラリ初期化3ファイル*************************************************************
-void ESP32_SPIFFS_ShinonomeFNT::SPIFFS_Shinonome_Init3F(const char* UTF8SJIS_file, const char* Shino_Half_Font_file, const char* Shino_Zen_Font_file)
-{
-  _gF1 = Shino_Half_Font_file;
-  _gF2 = Shino_Zen_Font_file;
-  
+void ESP32_SPIFFS_ShinonomeFNT::SPIFFS_Shinonome_Init3F(const char* UTF8SJIS_file, const char* Shino_Half_Font_file, const char* Shino_Zen_Font_file){
   SPIFFS.begin();
   //SPIFFS.begin(true);
-  
+
   Serial.println("card initialized.");
   _UtoS = SPIFFS.open(UTF8SJIS_file, FILE_READ);
   if (!_UtoS) {
@@ -77,8 +69,7 @@ void ESP32_SPIFFS_ShinonomeFNT::SPIFFS_Shinonome_Init3F(const char* UTF8SJIS_fil
   }
 }
 //********東雲フォントライブラリ初期化　２ファイル*************************************************************
-void ESP32_SPIFFS_ShinonomeFNT::SPIFFS_Shinonome_Init2F(const char* Shino_Half_Font_file, const char* Shino_Zen_Font_file)
-{
+void ESP32_SPIFFS_ShinonomeFNT::SPIFFS_Shinonome_Init2F(const char* Shino_Half_Font_file, const char* Shino_Zen_Font_file){
   SPIFFS.begin();
   //SPIFFS.begin(true);
 
@@ -100,7 +91,6 @@ void ESP32_SPIFFS_ShinonomeFNT::SPIFFS_Shinonome_Init2F(const char* Shino_Half_F
     Serial.print(Shino_Zen_Font_file);
     Serial.println(" File read OK!");
   }
-
 }
 //**************３ファイル　フォントファイルクローズ********************
 void ESP32_SPIFFS_ShinonomeFNT::SPIFFS_Shinonome_Close3F(){
@@ -115,7 +105,6 @@ void ESP32_SPIFFS_ShinonomeFNT::SPIFFS_Shinonome_Close3F(){
   SPIFFS.end();
   Serial.println("--------------SPIFFS.end");
 }
-
 //*************２ファイル　フォントファイルクローズ********************
 void ESP32_SPIFFS_ShinonomeFNT::SPIFFS_Shinonome_Close2F(){
   delay(1);
@@ -128,42 +117,64 @@ void ESP32_SPIFFS_ShinonomeFNT::SPIFFS_Shinonome_Close2F(){
   Serial.println("--------------SPIFFS.end");
 }
 //*******************東雲フォント全変換*************************
-uint16_t ESP32_SPIFFS_ShinonomeFNT::StrDirect_ShinoFNT_readALL(String str, uint8_t font_buf[][16])
-{
+uint16_t ESP32_SPIFFS_ShinonomeFNT::StrDirect_ShinoFNT_readALL(String str, uint8_t font_buf[][16]){
   uint8_t sj_txt[str.length()];
   uint16_t sj_length;
-  
+
   _u8ts.UTF8_to_SJIS_str_cnv(_UtoS, str, sj_txt, &sj_length);
   ESP32_SPIFFS_ShinonomeFNT::SjisToShinonome16FontRead_ALL(_SinoZ, _SinoH, 0, 0, sj_txt, sj_length, font_buf);
   return sj_length;
 }
-//*******************東雲フォント全変換 UTF8toShis変換ファイルハンドル外部読み込み*************************
-uint16_t ESP32_SPIFFS_ShinonomeFNT::StrDirect_ShinoFNT_readALL2F(File UtoS, String str, uint8_t font_buf[][16])
-{
+//*******************東雲フォント全変換、フォント回転*************************
+uint16_t ESP32_SPIFFS_ShinonomeFNT::StrDirect_ShinoFNT_readALL(int16_t Rotation, String str, uint8_t font_buf[][16]){
+  //※90度回転する場合、半角１文字は半角スペースを入れて２バイト文字とする。
+  int i = 0, ii = 0;
+
   uint8_t sj_txt[str.length()];
   uint16_t sj_length;
-  
+
+  _u8ts.UTF8_to_SJIS_str_cnv(_UtoS, str, sj_txt, &sj_length);
+  while(i<sj_length){
+    uint8_t fnt[2][16] = {};
+    i = i + ESP32_SPIFFS_ShinonomeFNT::SjisToShinonome16FontRead(_SinoZ, _SinoH, sj_txt[i], sj_txt[i+1], fnt[0], fnt[1]);
+    ESP32_SPIFFS_ShinonomeFNT::Fnt16x16_Rotation(Rotation, fnt, font_buf+ii);
+    ii = ii + 2;
+  }
+  return sj_length;
+}
+//*******************東雲フォント全変換 UTF8toShis変換ファイルハンドル外部読み込み*************************
+uint16_t ESP32_SPIFFS_ShinonomeFNT::StrDirect_ShinoFNT_readALL2F(File UtoS, String str, uint8_t font_buf[][16]){
+  uint8_t sj_txt[str.length()];
+  uint16_t sj_length;
+
   _u8ts.UTF8_to_SJIS_str_cnv(UtoS, str, sj_txt, &sj_length);
   ESP32_SPIFFS_ShinonomeFNT::SjisToShinonome16FontRead_ALL(_SinoZ, _SinoH, 0, 0, sj_txt, sj_length, font_buf);
   return sj_length;
 }
-//*******************東雲フォント全変換（Shift_JISコード返りあり）*************************
-uint16_t ESP32_SPIFFS_ShinonomeFNT::SjisShinonomeFNTread_ALL(String str, uint8_t* sj_code, uint8_t font_buf[][16])
-{
+//*******************UTF8 -> Shift_JISコード変換のみ*************************
+uint16_t ESP32_SPIFFS_ShinonomeFNT::UTF8toSJIS_convert(String str, uint8_t* sj_code){
   uint16_t sj_length;
-  
+
+  _u8ts.UTF8_to_SJIS_str_cnv(_UtoS, str, sj_code, &sj_length);
+  return sj_length;
+}
+//*******************東雲フォント全変換（Shift_JISコード返りあり）*************************
+uint16_t ESP32_SPIFFS_ShinonomeFNT::SjisShinonomeFNTread_ALL(String str, uint8_t* sj_code, uint8_t font_buf[][16]){
+  uint16_t sj_length;
+
   _u8ts.UTF8_to_SJIS_str_cnv(_UtoS, str, sj_code, &sj_length);
   ESP32_SPIFFS_ShinonomeFNT::SjisToShinonome16FontRead_ALL(_SinoZ, _SinoH, 0, 0, sj_code, sj_length, font_buf);
   return sj_length;
 }
-
 //*******************東雲フォント１文字変換*************************************************************
-uint8_t ESP32_SPIFFS_ShinonomeFNT::SjisToShinonome16FontRead(File f1, File f2, uint8_t Direction, int16_t Angle, uint8_t jisH, uint8_t jisL, uint8_t buf1[16], uint8_t buf2[16])
-{
+uint8_t ESP32_SPIFFS_ShinonomeFNT::SjisToShinonome16FontRead(File f1, File f2, uint8_t jisH, uint8_t jisL, uint8_t buf1[16], uint8_t buf2[16]){
   uint16_t fnt_adrs_half = 0x1346; //space
   uint32_t fnt_adrs_Zen = 0x467; //Space
   uint8_t cp;
-  
+
+  if(jisH < 0x20){
+    jisH = 0x20; //制御コードは全てスペース
+  }
   if((jisH>=0x20 && jisH<=0x7E) || (jisH>=0xA1 && jisH<=0xDF)){
     if(jisH<=0x63) fnt_adrs_half = 0x1346+(jisH-0x20)*126;
     else if(jisH<=0x7E) fnt_adrs_half = 0x34BF+(jisH-0x64)*127;
@@ -171,12 +182,12 @@ uint8_t ESP32_SPIFFS_ShinonomeFNT::SjisToShinonome16FontRead(File f1, File f2, u
 
     ESP32_SPIFFS_ShinonomeFNT::SPIFFS_Flash_ShinonomeFNTread_Harf_FHN(f2, fnt_adrs_half, buf1);
     cp = 1;
-    
+
     if((jisL>=0x20 && jisL<=0x7E) || (jisL>=0xA1 && jisL<=0xDF)){
       if(jisL<=0x63) fnt_adrs_half = 0x1346+(jisL-0x20)*126;
       else if(jisL<=0x7E) fnt_adrs_half = 0x34BF+(jisL-0x64)*127;
       else if(jisL>=0xA1) fnt_adrs_half = 0x4226+(jisL-0xA1)*129;
-      
+
       ESP32_SPIFFS_ShinonomeFNT::SPIFFS_Flash_ShinonomeFNTread_Harf_FHN(f2, fnt_adrs_half, buf2);
       cp = 2;
     }else{
@@ -189,76 +200,21 @@ uint8_t ESP32_SPIFFS_ShinonomeFNT::SjisToShinonome16FontRead(File f1, File f2, u
   }
   return cp;
 }
-//*******************東雲フォント１文字変換***************************************************
-uint8_t ESP32_SPIFFS_ShinonomeFNT::SjisToShinonome16FontRead2(uint8_t jisH, uint8_t jisL, uint8_t buf1[16], uint8_t buf2[16]){
-  uint16_t fnt_adrs_half = 0x1346; //space
-  uint32_t fnt_adrs_Zen = 0x467; //Space
-  uint8_t cp;
-  
-  if((jisH>=0x20 && jisH<=0x7E) || (jisH>=0xA1 && jisH<=0xDF)){
-    if(jisH<=0x63) fnt_adrs_half = 0x1346+(jisH-0x20)*126;
-    else if(jisH<=0x7E) fnt_adrs_half = 0x34BF+(jisH-0x64)*127;
-    else if(jisH>=0xA1) fnt_adrs_half = 0x4226+(jisH-0xA1)*129;
-
-    ESP32_SPIFFS_ShinonomeFNT::SPIFFS_Flash_ShinonomeFNTread_Harf_FHN(_SinoH, fnt_adrs_half, buf1);
-    cp = 1;
-    
-    if((jisL>=0x20 && jisL<=0x7E) || (jisL>=0xA1 && jisL<=0xDF)){
-      if(jisL<=0x63) fnt_adrs_half = 0x1346+(jisL-0x20)*126;
-      else if(jisL<=0x7E) fnt_adrs_half = 0x34BF+(jisL-0x64)*127;
-      else if(jisL>=0xA1) fnt_adrs_half = 0x4226+(jisL-0xA1)*129;
-      
-      ESP32_SPIFFS_ShinonomeFNT::SPIFFS_Flash_ShinonomeFNTread_Harf_FHN(_SinoH, fnt_adrs_half, buf2);
-      cp = 2;
-    }else{
-      cp = 1;
-    }
-  }else{
-    ESP32_SPIFFS_ShinonomeFNT::SjisToShinonomeFNTadrs(jisH, jisL, &fnt_adrs_Zen);
-    ESP32_SPIFFS_ShinonomeFNT::SPIFFS_Flash_ShinonomeFNTread_FHN(_SinoZ, fnt_adrs_Zen, buf1, buf2);
-    cp = 2;
-  }
-  return cp;
-}
 //*************S-jisまとめて変換*****************************************
-void ESP32_SPIFFS_ShinonomeFNT::SjisToShinonome16FontRead_ALL(File f1, File f2, uint8_t Direction, int16_t Angle, uint8_t* Sjis, uint16_t sj_length, uint8_t font_buf[][16])
-{
-  uint16_t fnt_adrs_half = 0x1346; //space
-  uint32_t fnt_adrs_Zen = 0x467; //Space
+void ESP32_SPIFFS_ShinonomeFNT::SjisToShinonome16FontRead_ALL(File f1, File f2, uint8_t Direction, int16_t Rotation, uint8_t* Sjis, uint16_t sj_length, uint8_t font_buf[][16]){
   uint16_t i = 0;
-  
+
   while(i < sj_length){
-    if(Sjis[i] < 0x20) Sjis[i] = 0x20; //制御コードは全てスペース
-    if((Sjis[i]>=0x20 && Sjis[i]<=0x7E) || (Sjis[i]>=0xA1 && Sjis[i]<=0xDF)){
-
-      if(Sjis[i]<=0x63) fnt_adrs_half = 0x1346+(Sjis[i]-0x20)*126;
-      else if(Sjis[i]<=0x7E) fnt_adrs_half = 0x34BF+(Sjis[i]-0x64)*127;
-      else if(Sjis[i]>=0xA1) fnt_adrs_half = 0x4226+(Sjis[i]-0xA1)*129;
-
-      ESP32_SPIFFS_ShinonomeFNT::SPIFFS_Flash_ShinonomeFNTread_Harf_FHN(f2, fnt_adrs_half, font_buf[i]);
-
-      if(Sjis[i+1] < 0x20) Sjis[i+1] = 0x20; //制御コードは全てスペース
-      if((Sjis[i+1]>=0x20 && Sjis[i+1]<=0x7E) || (Sjis[i+1]>=0xA1 && Sjis[i+1]<=0xDF)){
-        if(Sjis[i+1]<=0x63) fnt_adrs_half = 0x1346+(Sjis[i+1]-0x20)*126;
-        else if(Sjis[i+1]<=0x7E) fnt_adrs_half = 0x34BF+(Sjis[i+1]-0x64)*127;
-        else if(Sjis[i+1]>=0xA1) fnt_adrs_half = 0x4226+(Sjis[i+1]-0xA1)*129;
-
-        ESP32_SPIFFS_ShinonomeFNT::SPIFFS_Flash_ShinonomeFNTread_Harf_FHN(f2, fnt_adrs_half, font_buf[i+1]);
-        i = i+2;
-      }else{
-        i++;
-      }
+    if(i == sj_length-1){ //文字の最後の１つ前が奇数バイト数で、最後の文字が半角の場合の対処
+      i = i + ESP32_SPIFFS_ShinonomeFNT::SjisToShinonome16FontRead(f1, f2, Sjis[i], Sjis[i], font_buf[i], font_buf[i]);
     }else{
-      ESP32_SPIFFS_ShinonomeFNT::SjisToShinonomeFNTadrs(Sjis[i], Sjis[i+1], &fnt_adrs_Zen);
-      ESP32_SPIFFS_ShinonomeFNT::SPIFFS_Flash_ShinonomeFNTread_FHN(f1, fnt_adrs_Zen, font_buf[i], font_buf[i+1]);
-      i = i+2;
+      i = i + ESP32_SPIFFS_ShinonomeFNT::SjisToShinonome16FontRead(f1, f2, Sjis[i], Sjis[i+1], font_buf[i], font_buf[i+1]);
     }
     yield();
   }
 }
 //*******************Shift_JISコードから東雲フォントアドレス計算********************************************
-void ESP32_SPIFFS_ShinonomeFNT::SjisToShinonomeFNTadrs(uint8_t jisH, uint8_t jisL, uint32_t* fnt_adrs) 
-{    // S-JISコードから東雲フォントファイル上のバイト位置をポインタで返す。
+void ESP32_SPIFFS_ShinonomeFNT::SjisToShinonomeFNTadrs(uint8_t jisH, uint8_t jisL, uint32_t* fnt_adrs) {    // S-JISコードから東雲フォントファイル上のバイト位置をポインタで返す。
   uint16_t jisCode;
   int32_t adj = 0;
   
@@ -316,10 +272,8 @@ void ESP32_SPIFFS_ShinonomeFNT::SjisToShinonomeFNTadrs(uint8_t jisH, uint8_t jis
     *fnt_adrs = 0x467;  // 対応文字コードがなければ 全角スペースを返す
   }
 }
-
 //*****************全角フォントファイル読み込み、ファイルハンドル渡し**************************************
-void ESP32_SPIFFS_ShinonomeFNT::SPIFFS_Flash_ShinonomeFNTread_FHN(File ff, uint32_t addrs, uint8_t buf1[16], uint8_t buf2[16])
-{
+void ESP32_SPIFFS_ShinonomeFNT::SPIFFS_Flash_ShinonomeFNTread_FHN(File ff, uint32_t addrs, uint8_t buf1[16], uint8_t buf2[16]){
 //  Dir dir = SPIFFS.openDir("/");//これは読み取り速度が遅くなるかもしれないのでコメントアウトしている
   uint8_t i;
   uint8_t j=0;
@@ -347,16 +301,13 @@ void ESP32_SPIFFS_ShinonomeFNT::SPIFFS_Flash_ShinonomeFNTread_FHN(File ff, uint3
     delay(30000);
   }
 }
-
 //*****************半角フォントファイル読み込み、ファイルハンドル渡し**************************************
-void ESP32_SPIFFS_ShinonomeFNT::SPIFFS_Flash_ShinonomeFNTread_Harf_FHN(File ff, uint32_t addrs, uint8_t buf[16])
-{
-//  Dir dir = SPIFFS.openDir("/");//これは読み取り速度が遅くなるかもしれないのでコメントアウトしている
+void ESP32_SPIFFS_ShinonomeFNT::SPIFFS_Flash_ShinonomeFNTread_Harf_FHN(File ff, uint32_t addrs, uint8_t buf[16]){
   uint8_t i;
   uint8_t j=0;
   uint8_t c1, c2;
   uint8_t c[50];
-  
+
   if(ff){
     ff.seek(addrs);
     ff.read(c,48); //2byte+"." -->3byte*16=48byte
@@ -374,83 +325,133 @@ void ESP32_SPIFFS_ShinonomeFNT::SPIFFS_Flash_ShinonomeFNTread_Harf_FHN(File ff, 
     delay(30000);
   }
 }
-//*******************Shift_JIS 全角半角判断*************************************************************
-uint8_t ESP32_SPIFFS_ShinonomeFNT::Sjis_inc_FntRead(uint8_t *sj, uint16_t length, uint16_t *sj_cnt, uint8_t buf[2][16]){
-  uint16_t fnt_adrs_half = 0x1346; //space
-  uint32_t fnt_adrs_Zen = 0x467; //Space
-  uint8_t cp;
-  
-  if((*(sj + *sj_cnt)>=0x20 && *(sj + *sj_cnt)<=0x7E) || (*(sj + *sj_cnt)>=0xA1 && *(sj + *sj_cnt)<=0xDF)){
-    if(*(sj + *sj_cnt)<=0x63) fnt_adrs_half = 0x1346+(*(sj + *sj_cnt)-0x20)*126;
-    else if(*(sj + *sj_cnt)<=0x7E) fnt_adrs_half = 0x34BF+(*(sj + *sj_cnt)-0x64)*127;
-    else if(*(sj + *sj_cnt)>=0xA1) fnt_adrs_half = 0x4226+(*(sj + *sj_cnt)-0xA1)*129;
-
-    ESP32_SPIFFS_ShinonomeFNT::SPIFFS_Flash_ShinonomeFNTread_Harf_FHN(_SinoH, fnt_adrs_half, buf[0]);
-    cp = 1;
-    
-    if((*(sj + *sj_cnt+1)>=0x20 && *(sj + *sj_cnt+1)<=0x7E) || (*(sj + *sj_cnt+1)>=0xA1 && *(sj + *sj_cnt+1)<=0xDF)){
-      if(*(sj + *sj_cnt+1)<=0x63) fnt_adrs_half = 0x1346+(*(sj + *sj_cnt+1)-0x20)*126;
-      else if(*(sj + *sj_cnt+1)<=0x7E) fnt_adrs_half = 0x34BF+(*(sj + *sj_cnt+1)-0x64)*127;
-      else if(*(sj + *sj_cnt+1)>=0xA1) fnt_adrs_half = 0x4226+(*(sj + *sj_cnt+1)-0xA1)*129;
-      
-      ESP32_SPIFFS_ShinonomeFNT::SPIFFS_Flash_ShinonomeFNTread_Harf_FHN(_SinoH, fnt_adrs_half, buf[1]);
-      cp = 2;
-    }else{
-      cp = 1;
-    }
-  }else{
-    ESP32_SPIFFS_ShinonomeFNT::SjisToShinonomeFNTadrs(*(sj + *sj_cnt), *(sj + *sj_cnt+1), &fnt_adrs_Zen);
-    ESP32_SPIFFS_ShinonomeFNT::SPIFFS_Flash_ShinonomeFNTread_FHN(_SinoZ, fnt_adrs_Zen, buf[0], buf[1]);
-    cp = 2;
+//********************************************************************************
+void ESP32_SPIFFS_ShinonomeFNT::Scroll_Sjis_1_line(uint8_t disp_char, uint8_t num, uint8_t sj_txt[], uint16_t sj_length, uint8_t disp_buf[][16]){
+  if(_fnt_read_ok[num] == true) {
+    _Zen_or_Han[num] = ESP32_SPIFFS_ShinonomeFNT::Sjis_inc_FntRead(num, sj_txt, sj_length, _dummy_buf[num]);
   }
-  
+  _fnt_read_ok[num] = ESP32_SPIFFS_ShinonomeFNT::Scroller_Font8x16_DotReplace(16, num, _Zen_or_Han[num], _dummy_buf[num], disp_buf);
+}
+//***************フォント１文字変換自動インクリメント（複数行）文字カウント数返りあり*******************************
+uint8_t ESP32_SPIFFS_ShinonomeFNT::Sjis_inc_FntRead(uint16_t *sjcnt, uint8_t num, uint8_t sj[], uint16_t length, uint8_t buf[2][16]){
+  return ESP32_SPIFFS_ShinonomeFNT::Sjis_inc_FntRead(sj, length, sjcnt, buf);
+}
+//***************フォント１文字変換自動インクリメント（複数行）*******************************
+uint8_t ESP32_SPIFFS_ShinonomeFNT::Sjis_inc_FntRead(uint8_t num, uint8_t sj[], uint16_t length, uint8_t buf[2][16]){
+  return ESP32_SPIFFS_ShinonomeFNT::Sjis_inc_FntRead(sj, length, &_sj_cnt1[num], buf);
+}
+//***************フォント１文字変換自動インクリメント************************************
+uint8_t ESP32_SPIFFS_ShinonomeFNT::Sjis_inc_FntRead(uint8_t sj[], uint16_t length, uint16_t *sj_cnt, uint8_t buf[2][16]){
+  uint8_t cp = ESP32_SPIFFS_ShinonomeFNT::SjisToShinonome16FontRead(_SinoZ, _SinoH, sj[*sj_cnt], sj[*sj_cnt+1], buf[0], buf[1]);
+
   *sj_cnt = *sj_cnt + cp;
   if(*sj_cnt >= length) *sj_cnt = 0;
-  
+
   return cp;
 }
-//*******************Shift_JIS 全角半角判断*************************************************************
-uint8_t ESP32_SPIFFS_ShinonomeFNT::Sjis_inc_FntRead2(uint8_t *sj, uint16_t length, uint16_t *sj_cnt, uint8_t buf[2][16]){
-  uint16_t fnt_adrs_half = 0x1346; //space
-  uint32_t fnt_adrs_Zen = 0x467; //Space
-  uint8_t cp;
-  
-  if(!_SinoH){
-    _SinoH = SPIFFS.open(_gF1, FILE_READ);
-  }
-  if(!_SinoZ){
-    _SinoZ = SPIFFS.open(_gF2, FILE_READ);
-  }
-  
-  if((*(sj + *sj_cnt)>=0x20 && *(sj + *sj_cnt)<=0x7E) || (*(sj + *sj_cnt)>=0xA1 && *(sj + *sj_cnt)<=0xDF)){
-    if(*(sj + *sj_cnt)<=0x63) fnt_adrs_half = 0x1346+(*(sj + *sj_cnt)-0x20)*126;
-    else if(*(sj + *sj_cnt)<=0x7E) fnt_adrs_half = 0x34BF+(*(sj + *sj_cnt)-0x64)*127;
-    else if(*(sj + *sj_cnt)>=0xA1) fnt_adrs_half = 0x4226+(*(sj + *sj_cnt)-0xA1)*129;
+//*************フォントを９０度回転して取得する(SSD1306用) 文字カウント返し有り******************************
+uint8_t ESP32_SPIFFS_ShinonomeFNT::Sjis_inc_FntRead_Rot(uint16_t *sjcnt, int16_t Rotation, uint8_t Direction, uint8_t num, uint8_t sj[], uint16_t length, uint8_t bufff[2][16]){
+  uint8_t fnt_buf[2][16] = {};
+  uint8_t cp = ESP32_SPIFFS_ShinonomeFNT::Sjis_inc_FntRead(sj, length, sjcnt, fnt_buf);
 
-    ESP32_SPIFFS_ShinonomeFNT::SPIFFS_Flash_ShinonomeFNTread_Harf_FHN(_SinoH, fnt_adrs_half, buf[0]);
-    cp = 1;
-    
-    if((*(sj + *sj_cnt+1)>=0x20 && *(sj + *sj_cnt+1)<=0x7E) || (*(sj + *sj_cnt+1)>=0xA1 && *(sj + *sj_cnt+1)<=0xDF)){
-      if(*(sj + *sj_cnt+1)<=0x63) fnt_adrs_half = 0x1346+(*(sj + *sj_cnt+1)-0x20)*126;
-      else if(*(sj + *sj_cnt+1)<=0x7E) fnt_adrs_half = 0x34BF+(*(sj + *sj_cnt+1)-0x64)*127;
-      else if(*(sj + *sj_cnt+1)>=0xA1) fnt_adrs_half = 0x4226+(*(sj + *sj_cnt+1)-0xA1)*129;
-      
-      ESP32_SPIFFS_ShinonomeFNT::SPIFFS_Flash_ShinonomeFNTread_Harf_FHN(_SinoH, fnt_adrs_half, buf[1]);
-      cp = 2;
-    }else{
-      cp = 1;
-    }
-  }else{
-    ESP32_SPIFFS_ShinonomeFNT::SjisToShinonomeFNTadrs(*(sj + *sj_cnt), *(sj + *sj_cnt+1), &fnt_adrs_Zen);
-    ESP32_SPIFFS_ShinonomeFNT::SPIFFS_Flash_ShinonomeFNTread_FHN(_SinoZ, fnt_adrs_Zen, buf[0], buf[1]);
-    cp = 2;
-  }
+  ESP32_SPIFFS_ShinonomeFNT::Fnt16x16_Rotation(Rotation, fnt_buf, bufff);
 
-  _SinoH.close();
-  _SinoZ.close();
-
-  *sj_cnt = *sj_cnt + cp;
-  if(*sj_cnt >= length) *sj_cnt = 0;
-  
   return cp;
+}
+//*************フォントを９０度回転して取得する(SSD1306用)*********************************
+uint8_t ESP32_SPIFFS_ShinonomeFNT::Sjis_inc_FntRead_Rot(int16_t Rotation, uint8_t Direction, uint8_t num, uint8_t sj[], uint16_t length, uint8_t bufff[2][16]){
+/*  
+  uint8_t fnt_buf[2][16] = {};
+  uint8_t cp = ESP32_SPIFFS_ShinonomeFNT::Sjis_inc_FntRead(sj, length, &_sj_cnt1[num], fnt_buf);
+
+  ESP32_SPIFFS_ShinonomeFNT::Fnt16x16_Rotation(Rotation, fnt_buf, bufff);
+*/
+  return ESP32_SPIFFS_ShinonomeFNT::Sjis_inc_FntRead_Rot(&_sj_cnt1[num], Rotation, Direction, num, sj, length, bufff);
+}
+//********************************************************************************
+void ESP32_SPIFFS_ShinonomeFNT::Fnt16x16_Rotation(int16_t Rotation, uint8_t fnt_buf[2][16], uint8_t bufff[2][16]){
+  int i, j, j_rev=0;
+  uint8_t dummy = 0;
+
+  switch(Rotation){
+    case 90:
+      break;
+    case -90:
+      for(j=0; j<8; j++){
+        j_rev = 7 - j;
+        bufff[1][j] = 0;
+        for(i=0; i<8; i++){ 
+          dummy = ( fnt_buf[0][i] >> j_rev ) & 0x01;
+          if(dummy > 0){
+            bufff[1][j] = bufff[1][j] | (dummy << i);
+          }
+        }
+      }
+      for(j=0; j<8; j++){
+        j_rev = 7 - j;
+        bufff[0][j] = 0;
+        for(i=0; i<8; i++){
+          dummy = ( fnt_buf[0][i+8] >> j_rev ) & 0x01;
+          if(dummy > 0){
+            bufff[0][j] = bufff[0][j] | (dummy << i);
+          }
+        }
+      }
+      for(j=8; j<16; j++){
+        j_rev = 15 - j;
+        bufff[1][j] = 0;
+        for(i=0; i<8; i++){ 
+          dummy = ( fnt_buf[1][i] >> j_rev ) & 0x01;
+          if(dummy > 0){
+            bufff[1][j] = bufff[1][j] | (dummy << i);
+          }
+        }
+      }
+      for(j=8; j<16; j++){
+        j_rev = 15 - j;
+        bufff[0][j] = 0;
+        for(i=0; i<8; i++){
+          dummy = ( fnt_buf[1][i+8] >> j_rev ) & 0x01;
+          if(dummy > 0){
+            bufff[0][j] = bufff[0][j] | (dummy << i);
+          }
+        }
+      }
+      break;
+    default:
+      break;
+  }
+}
+//*********電光掲示板風スクロール関数 8x16ドット 16文字用********************
+boolean ESP32_SPIFFS_ShinonomeFNT::Scroller_Font8x16_DotReplace(uint8_t disp_char, uint8_t num, uint8_t Zen_or_Han, uint8_t font_buf1[][16], uint8_t scl_buff1[][16]){
+  int8_t i, j;
+  boolean fnt_read_ok = false;
+  uint8_t max_b = disp_char - 1;
+
+  for(i=0; i<max_b; i++){
+    for(j=0; j<16; j++){
+      scl_buff1[i][j] = scl_buff1[i][j]<<1;
+      scl_buff1[i][j] = ( scl_buff1[i][j] | (scl_buff1[i+1][j]>>7));
+    }
+  }
+
+  uint8_t dummy = 0;
+
+  for(i=0; i<16; i++){
+    dummy = font_buf1[ _Zen_or_Han_cnt[num] ][i] << ( _scl_cnt1[num] );
+    scl_buff1[max_b][i] = scl_buff1[max_b][i]<<1;
+    scl_buff1[max_b][i] =  scl_buff1[max_b][i] | (dummy>>7);
+  }
+  _scl_cnt1[num]++;
+
+  if(_scl_cnt1[num] == 8){
+    _scl_cnt1[num] = 0;
+    _Zen_or_Han_cnt[num]++;
+    if(_Zen_or_Han_cnt[num] == Zen_or_Han){
+      _Zen_or_Han_cnt[num] = 0;
+      fnt_read_ok = true;
+    }
+  }
+
+  return fnt_read_ok;
 }
