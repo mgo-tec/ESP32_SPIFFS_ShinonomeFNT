@@ -1,6 +1,6 @@
 /*
   ESP32_SPIFFS_ShinonomeFNT.cpp - Arduino core for the ESP32 Library.
-  Beta version 1.1
+  Beta version 1.2
   This is micro SPIFFS card library for reading Shinonome font.  
   
 The MIT License (MIT)
@@ -360,12 +360,6 @@ uint8_t ESP32_SPIFFS_ShinonomeFNT::Sjis_inc_FntRead_Rot(uint16_t *sjcnt, int16_t
 }
 //*************フォントを９０度回転して取得する(SSD1306用)*********************************
 uint8_t ESP32_SPIFFS_ShinonomeFNT::Sjis_inc_FntRead_Rot(int16_t Rotation, uint8_t Direction, uint8_t num, uint8_t sj[], uint16_t length, uint8_t bufff[2][16]){
-/*  
-  uint8_t fnt_buf[2][16] = {};
-  uint8_t cp = ESP32_SPIFFS_ShinonomeFNT::Sjis_inc_FntRead(sj, length, &_sj_cnt1[num], fnt_buf);
-
-  ESP32_SPIFFS_ShinonomeFNT::Fnt16x16_Rotation(Rotation, fnt_buf, bufff);
-*/
   return ESP32_SPIFFS_ShinonomeFNT::Sjis_inc_FntRead_Rot(&_sj_cnt1[num], Rotation, Direction, num, sj, length, bufff);
 }
 //********************************************************************************
@@ -382,7 +376,7 @@ void ESP32_SPIFFS_ShinonomeFNT::Fnt16x16_Rotation(int16_t Rotation, uint8_t fnt_
         bufff[1][j] = 0;
         for(i=0; i<8; i++){ 
           dummy = ( fnt_buf[0][i] >> j_rev ) & 0x01;
-          if(dummy > 0){
+          if(dummy){
             bufff[1][j] = bufff[1][j] | (dummy << i);
           }
         }
@@ -392,7 +386,7 @@ void ESP32_SPIFFS_ShinonomeFNT::Fnt16x16_Rotation(int16_t Rotation, uint8_t fnt_
         bufff[0][j] = 0;
         for(i=0; i<8; i++){
           dummy = ( fnt_buf[0][i+8] >> j_rev ) & 0x01;
-          if(dummy > 0){
+          if(dummy){
             bufff[0][j] = bufff[0][j] | (dummy << i);
           }
         }
@@ -402,7 +396,7 @@ void ESP32_SPIFFS_ShinonomeFNT::Fnt16x16_Rotation(int16_t Rotation, uint8_t fnt_
         bufff[1][j] = 0;
         for(i=0; i<8; i++){ 
           dummy = ( fnt_buf[1][i] >> j_rev ) & 0x01;
-          if(dummy > 0){
+          if(dummy){
             bufff[1][j] = bufff[1][j] | (dummy << i);
           }
         }
@@ -412,7 +406,7 @@ void ESP32_SPIFFS_ShinonomeFNT::Fnt16x16_Rotation(int16_t Rotation, uint8_t fnt_
         bufff[0][j] = 0;
         for(i=0; i<8; i++){
           dummy = ( fnt_buf[1][i+8] >> j_rev ) & 0x01;
-          if(dummy > 0){
+          if(dummy){
             bufff[0][j] = bufff[0][j] | (dummy << i);
           }
         }
