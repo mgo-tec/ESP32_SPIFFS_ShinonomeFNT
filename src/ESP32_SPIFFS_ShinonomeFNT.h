@@ -1,6 +1,6 @@
 /*
   ESP32_SPIFFS_ShinonomeFNT.h - Arduino core for the ESP32 Library.
-  Beta version 1.2
+  Beta version 1.3
   This is micro SPIFFS card library for reading Shinonome font.  
   
 The MIT License (MIT)
@@ -50,7 +50,7 @@ private:
   uint8_t _Zen_or_Han[6] = {};
   uint8_t _scl_cnt1[6] = {};
   uint16_t _sj_cnt1[6] = {};
-  boolean _fnt_read_ok[6] = {true, true, true, true};
+  boolean _fnt_read_ok[6] = {true, true, true, true, true, true};
   uint8_t _dummy_buf[6][2][16] = {};
 
 public:
@@ -71,6 +71,10 @@ public:
   void SPIFFS_Flash_ShinonomeFNTread_FHN(File ff, uint32_t addrs, uint8_t buf1[16], uint8_t buf2[16]);
   void SPIFFS_Flash_ShinonomeFNTread_Harf_FHN(File ff, uint32_t addrs, uint8_t buf[16]);
   void Scroll_Sjis_1_line(uint8_t disp_char, uint8_t num, uint8_t sj_txt[], uint16_t sj_length, uint8_t disp_buf[][16]);
+
+  uint8_t Sjis_Zen_or_Han(uint8_t jisH, uint8_t jisL);
+  uint8_t Sjis_Zen_or_Han_inc(uint8_t sj[], uint16_t length, uint16_t *sj_cnt);
+
   uint8_t Sjis_inc_FntRead(uint16_t *sjcnt, uint8_t num, uint8_t sj[], uint16_t length, uint8_t buf[2][16]);
   uint8_t Sjis_inc_FntRead(uint8_t num, uint8_t sj[], uint16_t length, uint8_t buf[2][16]);
   uint8_t Sjis_inc_FntRead(uint8_t sj[], uint16_t length, uint16_t *sj_cnt, uint8_t buf[2][16]);

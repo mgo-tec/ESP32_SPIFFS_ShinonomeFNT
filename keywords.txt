@@ -14,6 +14,8 @@ SPIFFS_Flash_ShinonomeFNTread_FHN	KEYWORD2
 SPIFFS_Flash_ShinonomeFNTread_Harf_FHN	KEYWORD2
 UTF8toSJIS_convert	KEYWORD2
 Scroll_Sjis_1_line	KEYWORD2
+Sjis_Zen_or_Han	KEYWORD2
+Sjis_Zen_or_Han_inc	KEYWORD2
 Sjis_inc_FntRead	KEYWORD2
 Sjis_inc_FntRead_Rot	KEYWORD2
 Fnt16x16_Rotation	KEYWORD2
