@@ -1,6 +1,6 @@
 /*
   ESP32_SPIFFS_ShinonomeFNT.h - Arduino core for the ESP32 Library.
-  Beta version 1.3
+  Beta version 1.32
   This is micro SPIFFS card library for reading Shinonome font.  
   
 The MIT License (MIT)

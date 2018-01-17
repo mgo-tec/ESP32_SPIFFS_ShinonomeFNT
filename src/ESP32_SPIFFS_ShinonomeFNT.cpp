@@ -1,6 +1,6 @@
 /*
   ESP32_SPIFFS_ShinonomeFNT.cpp - Arduino core for the ESP32 Library.
-  Beta version 1.3
+  Beta version 1.32
   This is micro SPIFFS card library for reading Shinonome font.  
   
 The MIT License (MIT)
@@ -165,25 +165,6 @@ uint16_t ESP32_SPIFFS_ShinonomeFNT::SjisShinonomeFNTread_ALL(String str, uint8_t
   _u8ts.UTF8_to_SJIS_str_cnv(_UtoS, str, sj_code, &sj_length);
   ESP32_SPIFFS_ShinonomeFNT::SjisToShinonome16FontRead_ALL(_SinoZ, _SinoH, 0, 0, sj_code, sj_length, font_buf);
   return sj_length;
-}
-//*******************Shift_JISコード全角半角判別*************************************************************
-uint8_t ESP32_SPIFFS_ShinonomeFNT::Sjis_Zen_or_Han(uint8_t jisH, uint8_t jisL){
-  uint8_t cp;
-
-  if(jisH < 0x20){
-    jisH = 0x20; //制御コードは全てスペース
-  }
-  if((jisH>=0x20 && jisH<=0x7E) || (jisH>=0xA1 && jisH<=0xDF)){
-    cp = 1;
-    if((jisL>=0x20 && jisL<=0x7E) || (jisL>=0xA1 && jisL<=0xDF)){
-     cp = 2;
-    }else{
-      cp = 1;
-    }
-  }else{
-    cp = 2;
-  }
-  return cp;
 }
 //*******************東雲フォント１文字変換*************************************************************
 uint8_t ESP32_SPIFFS_ShinonomeFNT::SjisToShinonome16FontRead(File f1, File f2, uint8_t jisH, uint8_t jisL, uint8_t buf1[16], uint8_t buf2[16]){
@@ -360,15 +341,27 @@ void ESP32_SPIFFS_ShinonomeFNT::Scroll_Sjis_1_line(uint8_t disp_char, uint8_t nu
   }
   _fnt_read_ok[num] = ESP32_SPIFFS_ShinonomeFNT::Scroller_Font8x16_DotReplace(16, num, _Zen_or_Han[num], _dummy_buf[num], disp_buf);
 }
-//***************フォント１文字変換自動インクリメント（複数行）文字カウント数返りあり*******************************
-uint8_t ESP32_SPIFFS_ShinonomeFNT::Sjis_inc_FntRead(uint16_t *sjcnt, uint8_t num, uint8_t sj[], uint16_t length, uint8_t buf[2][16]){
-  return ESP32_SPIFFS_ShinonomeFNT::Sjis_inc_FntRead(sj, length, sjcnt, buf);
-}
-//***************フォント１文字変換自動インクリメント（複数行）*******************************
-uint8_t ESP32_SPIFFS_ShinonomeFNT::Sjis_inc_FntRead(uint8_t num, uint8_t sj[], uint16_t length, uint8_t buf[2][16]){
-  return ESP32_SPIFFS_ShinonomeFNT::Sjis_inc_FntRead(sj, length, &_sj_cnt1[num], buf);
-}
+
 ////////////////////////////////////////////////////
+//*******************Shift_JISコード全角半角判別*************************************************************
+uint8_t ESP32_SPIFFS_ShinonomeFNT::Sjis_Zen_or_Han(uint8_t jisH, uint8_t jisL){
+  uint8_t cp;
+
+  if(jisH < 0x20){
+    jisH = 0x20; //制御コードは全てスペース
+  }
+  if((jisH>=0x20 && jisH<=0x7E) || (jisH>=0xA1 && jisH<=0xDF)){
+    cp = 1;
+    if((jisL>=0x20 && jisL<=0x7E) || (jisL>=0xA1 && jisL<=0xDF)){
+     cp = 2;
+    }else{
+      cp = 1;
+    }
+  }else{
+    cp = 2;
+  }
+  return cp;
+}
 //***************Shift_JIS 全角半角判別自動インクリメント************************************
 uint8_t ESP32_SPIFFS_ShinonomeFNT::Sjis_Zen_or_Han_inc(uint8_t sj[], uint16_t length, uint16_t *sj_cnt){
   uint8_t cp;
@@ -381,11 +374,24 @@ uint8_t ESP32_SPIFFS_ShinonomeFNT::Sjis_Zen_or_Han_inc(uint8_t sj[], uint16_t le
   if(*sj_cnt >= length) *sj_cnt = 0;
   return cp;
 }
-
+//***************フォント１文字変換自動インクリメント（複数行）文字カウント数返りあり*******************************
+uint8_t ESP32_SPIFFS_ShinonomeFNT::Sjis_inc_FntRead(uint16_t *sjcnt, uint8_t num, uint8_t sj[], uint16_t length, uint8_t buf[2][16]){
+  return ESP32_SPIFFS_ShinonomeFNT::Sjis_inc_FntRead(sj, length, sjcnt, buf);
+}
+//***************フォント１文字変換自動インクリメント（複数行）*******************************
+uint8_t ESP32_SPIFFS_ShinonomeFNT::Sjis_inc_FntRead(uint8_t num, uint8_t sj[], uint16_t length, uint8_t buf[2][16]){
+  return ESP32_SPIFFS_ShinonomeFNT::Sjis_inc_FntRead(sj, length, &_sj_cnt1[num], buf);
+}
 //***************フォント１文字変換自動インクリメント************************************
 uint8_t ESP32_SPIFFS_ShinonomeFNT::Sjis_inc_FntRead(uint8_t sj[], uint16_t length, uint16_t *sj_cnt, uint8_t buf[2][16]){
-  uint8_t cp = ESP32_SPIFFS_ShinonomeFNT::SjisToShinonome16FontRead(_SinoZ, _SinoH, sj[*sj_cnt], sj[*sj_cnt+1], buf[0], buf[1]);
-
+  uint8_t cp;
+  if(*sj_cnt+1 > length){
+    ESP32_SPIFFS_ShinonomeFNT::SjisToShinonome16FontRead(_SinoZ, _SinoH, sj[*sj_cnt], sj[*sj_cnt], buf[0], buf[1]);
+    cp = 1;
+  }else{
+    cp = ESP32_SPIFFS_ShinonomeFNT::SjisToShinonome16FontRead(_SinoZ, _SinoH, sj[*sj_cnt], sj[*sj_cnt+1], buf[0], buf[1]);
+  }
+  
   *sj_cnt = *sj_cnt + cp;
   if(*sj_cnt >= length) *sj_cnt = 0;
 
